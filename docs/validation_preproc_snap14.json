@@ -1,0 +1,45 @@
+{
+  "new_crs": "EPSG:4326",
+  "new_res": [
+    8.983152841195215e-05,
+    8.983152841195215e-05
+  ],
+  "n_ref_tiles": 98,
+  "8bit_round": {
+    "tiles_compared": 98,
+    "pixels_compared": 12844752,
+    "exact_match": 0.14951834025289082,
+    "within_1_dn": 0.42679126852741106,
+    "mean_abs_diff_dn": 2.2476816212566813,
+    "max_abs_diff_dn": 110
+  },
+  "8bit_trunc": {
+    "tiles_compared": 98,
+    "pixels_compared": 12844752,
+    "exact_match": 0.14665499185971048,
+    "within_1_dn": 0.41967349778337487,
+    "mean_abs_diff_dn": 2.285606448454591,
+    "max_abs_diff_dn": 109
+  },
+  "db_abs_diff": {
+    "median": 0.35976409912109375,
+    "p95": 1.147395133972168,
+    "p99": 1.7936715507507337
+  },
+  "subpixel_offset_cols_rows": {
+    "mean": [
+      0.005012329900637269,
+      -0.00014541168586999577
+    ],
+    "max_abs": [
+      0.005012329900637269,
+      0.0021600419640890323
+    ]
+  },
+  "water_mask_original_vs_new_input": {
+    "pixel_agreement": 0.9992874911092094,
+    "iou_water": 0.9802055576703465,
+    "water_fraction_original_input": 0.03563229558655551,
+    "water_fraction_new_input": 0.03564599768060917
+  }
+}

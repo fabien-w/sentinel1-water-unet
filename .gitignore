@@ -1,0 +1,38 @@
+# project brief (contains private resource paths)
+Water_with_Sentinel1.txt
+
+# credentials and local config
+.env
+*.env
+config.local.*
+.aws/
+credentials*
+
+# data and outputs
+data/
+s1water_work/
+outputs/
+*.tif
+*.tiff
+*.h5
+*.pt
+*.safetensors
+*.zip
+*.SAFE/
+!docs/figures/*.png
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# os
+.DS_Store
+Thumbs.db

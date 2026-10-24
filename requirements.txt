@@ -1,0 +1,28 @@
+# Tested versions (Python 3.11, Ubuntu, CUDA 12.4). For a GPU build of PyTorch install it first:
+#   pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0
+numpy==2.4.6
+rasterio==1.4.4
+affine==3.0.1
+scipy==1.17.1
+shapely==2.2.0
+pyproj==3.7.2
+safetensors==0.8.0
+huggingface-hub==2.3.0
+tqdm==4.70.1
+pillow==13.0.0
+# search and download
+asf-search==14.1.0
+boto3==1.43.118
+botocore==1.43.118
+# notebooks
+folium==0.20.0
+matplotlib==3.11.2
+jupyterlab==4.6.4
+ipykernel==7.4.0
+# development
+pytest==9.1.1
+ruff==0.17.2
+nbformat==5.11.1
+# SNAP preprocessing (also needs ESA SNAP 14, see docs/INSTALL_SNAP.md)
+esa-snappy==1.1.3

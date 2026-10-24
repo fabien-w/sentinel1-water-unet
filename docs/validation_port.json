@@ -1,0 +1,44 @@
+{
+  "n_tiles": 2379,
+  "device": "cuda",
+  "keras32_vs_torch32": {
+    "n_tiles": 300,
+    "max_abs_diff_probability": 4.827976226806641e-06,
+    "mean_abs_diff_probability": 7.174374855701366e-09,
+    "mask_agreement": 1.0,
+    "keras32_vs_original_R_mask_agreement": 0.999967041015625
+  },
+  "torch32_vs_original_R_masks": {
+    "pixel_agreement": 0.9999664935207808,
+    "iou_water": 0.9997892697818757,
+    "tiles_identical": 1371
+  },
+  "torch16_vs_original_R_masks": {
+    "pixel_agreement": 0.9999823423933211,
+    "iou_water": 0.9998889497498223,
+    "tiles_identical": 1636
+  },
+  "scores_vs_reference": {
+    "orig": {
+      "precision": 0.9278,
+      "recall": 0.9262,
+      "f1": 0.927
+    },
+    "torch32": {
+      "precision": 0.9279,
+      "recall": 0.9261,
+      "f1": 0.927
+    },
+    "torch16": {
+      "precision": 0.9278,
+      "recall": 0.9262,
+      "f1": 0.927
+    }
+  },
+  "paper_table2_validation": {
+    "precision": 0.934,
+    "recall": 0.926,
+    "f1": 0.93,
+    "n_tiles": 6057
+  }
+}

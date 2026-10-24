@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "s1water"
+dynamic = ["version"]
+description = "Surface water segmentation from Sentinel-1 SAR with a U-Net (Wagner et al. 2024, Remote Sensing)"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Fabien H. Wagner", email = "fwagner@ctrees.org" }]
+keywords = ["Sentinel-1", "SAR", "water", "U-Net", "Amazon", "remote sensing", "deep learning"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research",
+]
+# Core: prediction and post-processing (no SNAP needed)
+dependencies = [
+    "numpy>=1.26",
+    "torch>=2.2",
+    "rasterio>=1.3.9",
+    "scipy>=1.11",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "safetensors>=0.4",
+    "huggingface_hub>=0.23",
+    "tqdm>=4.66",
+    "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+# Search and download of Sentinel-1 scenes (ASF catalogue + requester-pays S3 bucket)
+data = ["asf_search>=8.0", "boto3>=1.34"]
+# Maps and figures used by the notebooks
+viz = ["folium>=0.16", "matplotlib>=3.8"]
+notebook = ["s1water[data,viz]", "jupyterlab>=4.1", "ipykernel>=6.29"]
+dev = ["s1water[data,viz]", "pytest>=8.0", "ruff>=0.5", "nbformat>=5.10"]
+# Note: esa_snappy (SNAP preprocessing) is installed separately, see docs/INSTALL_SNAP.md
+
+[project.scripts]
+s1water = "s1water.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/fabien-w/sentinel1-water-unet"
+Paper = "https://doi.org/10.3390/rs16061056"
+
+[tool.hatch.version]
+path = "src/s1water/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/s1water"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]

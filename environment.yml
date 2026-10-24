@@ -1,0 +1,11 @@
+# conda env create -f environment.yml && conda activate s1water && pip install -e ".[notebook]"
+name: s1water
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu124
+      - -r requirements.txt

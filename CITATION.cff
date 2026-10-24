@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software or the model weights, please cite the article below."
+title: "s1water: surface water segmentation from Sentinel-1 SAR with a U-Net"
+type: software
+license: MIT
+version: 1.0.1
+authors:
+  - family-names: Wagner
+    given-names: Fabien H.
+    email: fwagner@ctrees.org
+    affiliation: CTrees
+repository-code: "https://github.com/fabien-w/sentinel1-water-unet"
+preferred-citation:
+  type: article
+  title: "The Amazon's 2023 Drought: Sentinel-1 Reveals Extreme Rio Negro River Contraction"
+  authors:
+    - family-names: Wagner
+      given-names: Fabien H.
+    - family-names: Favrichon
+      given-names: Samuel
+    - family-names: Dalagnol
+      given-names: Ricardo
+    - family-names: Hirye
+      given-names: Mayumi C. M.
+    - family-names: Mullissa
+      given-names: Adugna
+    - family-names: Saatchi
+      given-names: Sassan
+  journal: "Remote Sensing"
+  volume: 16
+  issue: 6
+  start: 1056
+  year: 2024
+  doi: "10.3390/rs16061056"

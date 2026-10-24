@@ -1,0 +1,20 @@
+<graph id="original">
+  <version>1.0</version>
+  <node id="Read"><operator>Read</operator><parameters><file>${input}</file></parameters></node>
+  <node id="Orbit"><operator>Apply-Orbit-File</operator><sources><sourceProduct refid="Read"/></sources>
+    <parameters><orbitType>Sentinel Precise (Auto Download)</orbitType><polyDegree>3</polyDegree><continueOnFail>false</continueOnFail></parameters></node>
+  <node id="BNR"><operator>Remove-GRD-Border-Noise</operator><sources><sourceProduct refid="Orbit"/></sources>
+    <parameters><selectedPolarisations>VH,VV</selectedPolarisations></parameters></node>
+  <node id="TNR"><operator>ThermalNoiseRemoval</operator><sources><sourceProduct refid="BNR"/></sources>
+    <parameters><removeThermalNoise>true</removeThermalNoise></parameters></node>
+  <node id="Cal"><operator>Calibration</operator><sources><sourceProduct refid="TNR"/></sources>
+    <parameters><outputSigmaBand>true</outputSigmaBand><selectedPolarisations>VH,VV</selectedPolarisations><outputImageScaleInDb>false</outputImageScaleInDb></parameters></node>
+  <node id="TC"><operator>Terrain-Correction</operator><sources><sourceProduct refid="Cal"/></sources>
+    <parameters><demName>GETASSE30</demName><imgResamplingMethod>BILINEAR_INTERPOLATION</imgResamplingMethod><saveProjectedLocalIncidenceAngle>false</saveProjectedLocalIncidenceAngle><saveSelectedSourceBand>true</saveSelectedSourceBand></parameters></node>
+  <node id="dB"><operator>LinearToFromdB</operator><sources><sourceProduct refid="TC"/></sources>
+    <parameters><sourceBands>Sigma0_VH,Sigma0_VV</sourceBands></parameters></node>
+  <node id="Subset"><operator>Subset</operator><sources><sourceProduct refid="dB"/></sources>
+    <parameters><sourceBands>Sigma0_VH_db,Sigma0_VV_db</sourceBands><geoRegion>${region}</geoRegion><copyMetadata>true</copyMetadata></parameters></node>
+  <node id="Write"><operator>Write</operator><sources><sourceProduct refid="Subset"/></sources>
+    <parameters><file>${output}</file><formatName>GeoTIFF-BigTIFF</formatName></parameters></node>
+</graph>
