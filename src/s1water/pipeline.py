@@ -82,7 +82,7 @@ def write_mask(path: str | Path, mask: np.ndarray, profile: dict, probability: n
 
 
 def predict_scene(img8_tif: str | Path, out_tif: str | Path, weights: str | None = None, device: str | None = None,
-                  apply_shade_mask: bool = True, srtm_cache: str | Path | None = None,
+                  apply_shade_mask: bool = False, srtm_cache: str | Path | None = None,
                   save_probability: bool = False) -> dict:
     """Prediction + post-processing of a preprocessed 8-bit scene, written as a GeoTIFF.
 

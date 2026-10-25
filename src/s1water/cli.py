@@ -34,7 +34,7 @@ def main(argv=None):
     pr.add_argument("out")
     pr.add_argument("--weights", help="local .safetensors/.pt; default: download from Hugging Face")
     pr.add_argument("--device")
-    pr.add_argument("--no-shade-mask", action="store_true")
+    pr.add_argument("--shade-mask", action="store_true", help="also mask SRTM mountain shade (off by default)")
     pr.add_argument("--probability", action="store_true", help="also save the probability raster")
 
     r = sub.add_parser("run", help="search + download + preprocess + predict (latest scene)")
@@ -64,7 +64,7 @@ def main(argv=None):
     elif a.cmd == "predict":
         from .pipeline import predict_scene
 
-        print(json.dumps(predict_scene(a.img8, a.out, a.weights, a.device, not a.no_shade_mask,
+        print(json.dumps(predict_scene(a.img8, a.out, a.weights, a.device, a.shade_mask,
                                        save_probability=a.probability), indent=2))
     elif a.cmd == "run":
         from .data import download_scene, search_scenes

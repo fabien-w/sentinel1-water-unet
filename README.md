@@ -46,7 +46,7 @@ The workflow, as in the paper:
    `s3://sentinel-s1-l1c` bucket (AWS Open Data, requester pays);
 2. **preprocess** with ESA SNAP through its Python API `esa_snappy`;
 3. **predict** with the U-Net on 4224 × 4224 tiles (GPU, CPU fallback);
-4. **post-process**: scene-border mask and SRTM mountain-shade mask;
+4. **post-process**: scene-border mask (optional SRTM mountain-shade mask);
 5. **export** a GeoTIFF and display the result on a map.
 
 ## Quickstart
@@ -143,9 +143,12 @@ paper with SNAP 9, use the graph [`snap_graphs/s1_water_preprocessing.xml`](snap
 4224 × 4224 tiles every 4096 px, and the model crops 64 px on each side, so the 4096 × 4096
 predictions join without seams. float16 on GPU, like the original mixed-precision prediction (9.7 GB of GPU memory per tile).
 
-**Post-processing (`s1water.postprocess`)**: no-data and noisy scene borders removed (1000 m on the
-range sides, 500 m on the azimuth sides); mountain shadows removed with SRTM (slope ≥ 20° on 90 m
-SRTM, convex hulls), as in the paper.
+**Post-processing (`s1water.postprocess`)**: the area outside the acquisition footprint and the noisy
+scene borders are set to no data (1000 m on the range sides, 500 m on the azimuth sides), as in the
+paper. Inside the scene no pixel is masked: 255 in the output means no data only. Optionally
+(`apply_shade_mask=True`, `--shade-mask`, or `APPLY_SHADE_MASK` in the notebooks) mountain shadows are
+removed with SRTM (slope ≥ 20° on 90 m SRTM, convex hulls). It is off by default because over flat
+forest SRTM is noisy and the rule hides lakes and channels, which the paper removed by hand.
 
 ## Validation
 
@@ -165,8 +168,9 @@ SRTM, convex hulls), as in the paper.
   mapped as open water.
 - Strong convective rain cells can raise the backscatter of water and cause omissions. The paper
   corrected them with a 62-date time series and visual inspection; this is not done here.
-- Radar shadow in mountains looks like water; the SRTM mask removes most of it, but the manual edits of
-  the paper are not reproduced.
+- Radar shadow in mountains looks like water. The optional SRTM shade mask removes most of it, but the
+  manual edits of the paper are not reproduced, so in flat areas it would also hide lakes: keep it off
+  there (default).
 - Precise orbit files are published ~20 days after acquisition; for more recent scenes restituted
   orbits are used (negligible effect at 10 m).
 - Preprocessing with SNAP 14 differs from the paper's SNAP 9 by a sub-pixel shift (~3 m): water masks
@@ -202,7 +206,7 @@ available at <https://doi.org/10.5281/zenodo.10552959>.
   <https://github.com/wajuqi/Sentinel-1-preprocessing-using-Snappy>.
 - **Sentinel-1 data**: contains modified Copernicus Sentinel data (2023, 2026), accessed through the AWS
   Registry of Open Data (`sentinel-s1-l1c`) and searched with the ASF catalogue (`asf_search`).
-- **Elevation**: GETASSE30 (terrain correction, via SNAP) and SRTM 1 arc-second (shade mask), served by
+- **Elevation**: GETASSE30 (terrain correction, via SNAP) and SRTM 1 arc-second (optional shade mask), served by
   the AWS Terrain Tiles open dataset (Mapzen/Linux Foundation).
 - **Loss**: binary cross-entropy + Dice coefficient (Milletari et al., 2016).
 - **Basemap in notebooks**: Esri World Imagery.

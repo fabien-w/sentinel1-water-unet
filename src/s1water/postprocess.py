@@ -1,24 +1,27 @@
 """Post-processing of the water predictions, following Wagner et al. (2024).
 
-Two masks of the original workflow are applied to every scene:
-
-1. Valid-data mask (R script 29.03 of the paper). Pixels equal to 250 in the 8-bit
-   image are SNAP no-data. The original code builds the valid-data polygon on a grid
-   16 times coarser (gdalwarp -r average), removes its holes, and erodes the scene
+1. Valid-data mask (R script 29.03 of the paper), always applied. SNAP no-data becomes 250
+   in the 8-bit image, but 250 is also a valid value (backscatter of ~0 dB): the original
+   code therefore never masks single pixels. It builds the valid-data polygon on a grid
+   16 times coarser (gdalwarp -r average): a cell is no data only if all its pixels are
+   250, i.e. outside the acquisition footprint. It removes the holes and erodes the scene
    borders by 1000 m on the left/right (range) edges and 500 m on the top/bottom
    (azimuth) edges, where GRD border noise and slice "staircases" remain.
    Here the same widths are applied with an anisotropic erosion of the coarse
    valid-data mask (the polygon vertex logic of the original R code cannot be
    ported exactly).
 
-2. Mountain shade mask (paper section 2.3, R script SRTM_preparation.r). SRTM 1 arc-second
+2. Mountain shade mask (paper section 2.3, R script SRTM_preparation.r), OPTIONAL and off by
+   default: over the forested lowlands SRTM is noisy (canopy steps, pits over water) and the
+   rule flags lakes and channels, which the paper removed by hand. SRTM 1 arc-second
    elevation is aggregated by 3 with the minimum (~90 m), the slope is computed with
    8 neighbours, slopes >= 20 degrees are kept, converted to polygons without holes
    and replaced by their convex hulls. The manual edits of the paper are not reproduced.
    SRTM tiles are read from the public AWS Terrain Tiles bucket (no account needed).
 
-Output coding of the final mask (uint8): 0 = not water, 1 = water, 255 = no data
-(not predicted, scene border, or mountain shade). The original files used 254 for water.
+Output coding of the final mask (uint8): 0 = not water, 1 = water, 255 = no data, used only
+outside the valid footprint (scene border), in the 64 px image margin, and in the optional
+shade mask. The original files used 254 for water.
 """
 
 from __future__ import annotations
@@ -84,9 +87,8 @@ def valid_data_mask(img8: np.ndarray, transform, crs) -> np.ndarray:
         ell = ((xx / max(rx, 1e-9)) ** 2 + (yy / max(ry, 1e-9)) ** 2) <= 1.0
         nodata = ~(coarse_valid | outside)
         coarse_valid = coarse_valid & ~ndimage.binary_dilation(nodata, structure=ell)
-    full = np.repeat(np.repeat(coarse_valid, f, axis=0), f, axis=1)[:h, :w]
-    # pixels that are themselves no-data are never valid
-    return full & (band != NODATA_8BIT)
+    # single pixels equal to 250 inside the footprint stay valid (~0 dB targets), as in the original
+    return np.repeat(np.repeat(coarse_valid, f, axis=0), f, axis=1)[:h, :w]
 
 
 # --------------------------------------------------------------------------- SRTM shade

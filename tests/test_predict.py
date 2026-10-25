@@ -49,3 +49,12 @@ def test_input_checks():
         predict_image(MeanModel(), np.zeros((4, 10, 10), np.uint8), "cpu")
     with pytest.raises(ValueError):
         predict_image(MeanModel(), np.zeros((2, 10, 10), np.uint8), "cpu", tile=50, step=32, crop=8)
+
+
+def test_input_255_is_valid_data_not_no_data():
+    # a valid input pixel at 255 (bright target, >= +1 dB) must give 0/1, never 255, in the output
+    img = np.full((2, 120, 120), 120, dtype=np.uint8)
+    img[:, 40:60, 40:60] = 255
+    m = predict_image(MeanModel(), img, "cpu", progress=False, tile=48, step=32, crop=8)
+    assert (m[8:, 8:] != 255).all()
+    assert (m[40:60, 40:60] == 1).all()

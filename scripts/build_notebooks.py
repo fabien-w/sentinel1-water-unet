@@ -48,7 +48,7 @@ The model was trained on Sentinel-1 images of the Amazon and high-resolution ref
 - **c.** download the scene from the `sentinel-s1-l1c` AWS bucket (*requester pays*, see below)
 - **d.** preprocess it with ESA SNAP (`esa_snappy`): orbit, border and thermal noise removal, calibration, terrain correction, dB, 8 bits
 - **e.** download the PyTorch weights from [Hugging Face](https://huggingface.co/{HF}) and predict on the GPU (4224 px tiles, as in the paper)
-- **f.** post-processing of the paper: scene-border mask and SRTM mountain-shade mask
+- **f.** post-processing of the paper: scene-border mask (and optional SRTM mountain-shade mask)
 - **g.** display the water mask over the radar image and a satellite basemap, and export a GeoTIFF
 
 **About data access and costs.** The Sentinel-1 bucket `s3://sentinel-s1-l1c` (AWS Open Data) is
@@ -300,13 +300,17 @@ raw[:, -CROP:] = 255
     md("""
 ## f. Post-processing
 
-As in the paper: (1) scene-border mask (no-data pixels and the noisy scene edges, 1000 m on the range
-sides and 500 m on the azimuth sides) and (2) mountain-shade mask (SRTM slopes ≥ 20°, convex hulls),
-because radar shadows look like water. Masked pixels are set to no data (255).
+As in the paper: the area outside the acquisition footprint and the noisy scene edges (1000 m on the
+range sides, 500 m on the azimuth sides) are set to no data (255). Inside the scene, no pixel is masked.
+
+Optional: `APPLY_SHADE_MASK` also removes mountain shadows (SRTM slopes ≥ 20°, convex hulls), because
+radar shadows look like water. Use it only in mountains: over flat forest SRTM is noisy and the rule
+would hide lakes and channels (the paper cleaned these polygons by hand).
 """),
     code("""
+APPLY_SHADE_MASK = False  #@param {type:"boolean"}
 valid = valid_data_mask(img8, profile["transform"], profile["crs"])
-shade = shade_mask(raw.shape, profile["transform"], profile["crs"], cache_dir=WORK / "srtm")
+shade = shade_mask(raw.shape, profile["transform"], profile["crs"], cache_dir=WORK / "srtm") if APPLY_SHADE_MASK else np.zeros_like(valid)
 water = apply_masks(raw, valid, shade)
 lat_c = profile["transform"].f + profile["transform"].e * water.shape[0] / 2
 px_km2 = (profile["transform"].a * 111.32 * np.cos(np.radians(lat_c))) * (abs(profile["transform"].e) * 111.32)
