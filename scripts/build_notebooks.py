@@ -25,6 +25,12 @@ def code(s):
     return nbf.v4.new_code_cell(s.strip())
 
 
+STEPS_END_JUPYTER = """- **f.** post-processing of the paper: scene-border mask (and optional SRTM mountain-shade mask)
+- **g.** display the water mask over the radar image and a satellite basemap, and export a GeoTIFF"""
+STEPS_END_COLAB = """- **f.** post-processing of the paper: scene-border mask
+- **g.** display the water mask over the radar image and a satellite basemap, and export a GeoTIFF"""
+
+
 def intro(colab: bool):
     badge = f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({COLAB_URL})\n\n" if colab else ""
     where = (
@@ -43,19 +49,67 @@ The model was trained on Sentinel-1 images of the Amazon and high-resolution ref
 {where}
 
 **Steps**
-- **a.** choose a point on an interactive map (default: Anavilhanas archipelago, Rio Negro, Brazil)
+- **a.** choose a point{" (type it, or click on the map)" if colab else " on an interactive map"} (default: Anavilhanas archipelago, Rio Negro, Brazil)
 - **b.** search the Sentinel-1 IW GRD scenes over this point (default: August 2026)
 - **c.** download the scene from the `sentinel-s1-l1c` AWS bucket (*requester pays*, see below)
 - **d.** preprocess it with ESA SNAP (`esa_snappy`): orbit, border and thermal noise removal, calibration, terrain correction, dB, 8 bits
 - **e.** download the PyTorch weights from [Hugging Face](https://huggingface.co/{HF}) and predict on the GPU (4224 px tiles, as in the paper)
-- **f.** post-processing of the paper: scene-border mask (and optional SRTM mountain-shade mask)
-- **g.** display the water mask over the radar image and a satellite basemap, and export a GeoTIFF
+{STEPS_END_COLAB if colab else STEPS_END_JUPYTER}
 
 **About data access and costs.** The Sentinel-1 bucket `s3://sentinel-s1-l1c` (AWS Open Data) is
 *requester pays*: you need an AWS account, and your account pays the transfer, about **US$0.12 per scene**
 (1.3 GB × US$0.09/GB). Without AWS credentials, the notebook uses a **preprocessed Anavilhanas scene
 (28 August 2026) hosted on Hugging Face** and skips steps c and d.
 """)
+
+
+A_TEXT_JUPYTER = """
+## a. Choose a point
+
+The default point is on the **Anavilhanas archipelago** (Rio Negro, Brazil), a maze of ~400 forested
+islands and channels upstream of Manaus. Click on the map to read other coordinates, then change
+`LAT` and `LON` and run the cells again. `HALF_SIZE` sets the size of the area processed around the
+point (0.25° gives a ~55 × 55 km square; the whole scene is ~250 × 170 km).
+"""
+A_CODE_JUPYTER = """
+LAT = -2.70  #@param {type:"number"}
+LON = -60.80  #@param {type:"number"}
+HALF_SIZE = 0.25  #@param {type:"number"}
+AOI = aoi_wkt(LON, LAT, HALF_SIZE)
+viz.point_map(LAT, LON, zoom=9, aoi_wkt=AOI)
+"""
+A_TEXT_COLAB = """
+## a. Choose a point
+
+The default point is on the **Anavilhanas archipelago** (Rio Negro, Brazil), a maze of ~400 forested
+islands and channels upstream of Manaus. Two ways to choose another point:
+
+- **Type it**: change `LAT` and `LON` in the form and run the cell again.
+- **Click on the map** (`CLICK_ON_MAP` checked): click anywhere on the map below; the marker moves and the
+  *Latitude* / *Longitude* boxes next to the map fill in. You can also type in these boxes. Then run the
+  next cells (*Runtime → Run after*): they use the point shown in the boxes.
+
+`HALF_SIZE` sets the size of the area processed around the point (0.25° gives a ~55 × 55 km square;
+the whole scene is ~250 × 170 km).
+"""
+A_CODE_COLAB = """
+LAT = -2.70  #@param {type:"number"}
+LON = -60.80  #@param {type:"number"}
+HALF_SIZE = 0.25  #@param {type:"number"}
+CLICK_ON_MAP = True  #@param {type:"boolean"}
+
+if CLICK_ON_MAP:
+    try:
+        from google.colab import output
+        output.enable_custom_widget_manager()  # interactive widgets (ipyleaflet) in Colab
+    except ImportError:
+        pass
+    picker = viz.PointPicker(LAT, LON, zoom=9, half_size=HALF_SIZE)
+    display(picker.widget)
+else:
+    picker = None
+    display(viz.point_map(LAT, LON, zoom=9, aoi_wkt=aoi_wkt(LON, LAT, HALF_SIZE)))
+"""
 
 
 COLAB_SETUP = [
@@ -167,8 +221,12 @@ except Exception as err:
 """),
 ]
 
-COMMON = [
-    code("""
+def common(colab: bool):
+    imports_post = ("from s1water.postprocess import apply_masks, valid_data_mask\n" if colab
+                    else "from s1water.postprocess import apply_masks, shade_mask, valid_data_mask\n")
+    res_letter = "g"
+    cells = [
+    code(f"""
 import json, logging, time
 from pathlib import Path
 import numpy as np
@@ -177,8 +235,7 @@ from s1water import config
 from s1water.data import download_scene, scene_in_bucket, search_scenes
 from s1water.model import load_model
 from s1water.pipeline import aoi_wkt, download_example_scene, download_weights, read_8bit, write_mask
-from s1water.postprocess import apply_masks, shade_mask, valid_data_mask
-from s1water.predict import CROP, get_device, predict_image
+{imports_post}from s1water.predict import CROP, get_device, predict_image
 from s1water import viz
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", force=True)
@@ -201,21 +258,8 @@ print("AWS credentials found:", HAVE_AWS, "| SNAP available:", SNAP_OK)
 if not (HAVE_AWS and SNAP_OK):
     print("-> steps c and d will use the preprocessed Anavilhanas scene from Hugging Face")
 """),
-    md("""
-## a. Choose a point
-
-The default point is on the **Anavilhanas archipelago** (Rio Negro, Brazil), a maze of ~400 forested
-islands and channels upstream of Manaus. Click on the map to read other coordinates, then change
-`LAT` and `LON` and run the cells again. `HALF_SIZE` sets the size of the area processed around the
-point (0.25° gives a ~55 × 55 km square; the whole scene is ~250 × 170 km).
-"""),
-    code("""
-LAT = -2.70  #@param {type:"number"}
-LON = -60.80  #@param {type:"number"}
-HALF_SIZE = 0.25  #@param {type:"number"}
-AOI = aoi_wkt(LON, LAT, HALF_SIZE)
-viz.point_map(LAT, LON, zoom=9, aoi_wkt=AOI)
-"""),
+    md(A_TEXT_COLAB if colab else A_TEXT_JUPYTER),
+    code(A_CODE_COLAB if colab else A_CODE_JUPYTER),
     md("""
 ## b. Search Sentinel-1 scenes
 
@@ -224,7 +268,13 @@ the Alaska Satellite Facility catalogue (`asf_search`, no account needed), as in
 By default the most recent scene of the period is selected. Since 2025, the scenes over Anavilhanas
 come from **Sentinel-1C/D** (the model was trained with Sentinel-1A images; the sensors are identical by design).
 """),
-    code("""
+    code((("""
+# point chosen on the map (or typed in the boxes next to it); otherwise the LAT / LON of the form
+if picker is not None:
+    LAT, LON = picker.lat, picker.lon
+AOI = aoi_wkt(LON, LAT, HALF_SIZE)
+print(f"Point: {LAT:.4f}, {LON:.4f}")
+""" if colab else "") + """
 START = "2026-08-01"  #@param {type:"string"}
 END = "2026-08-31"  #@param {type:"string"}
 # dates as YYYY-MM-DD (or just YYYY-MM); a day that does not exist, e.g. 2026-06-31, is corrected
@@ -237,7 +287,7 @@ for i, s in enumerate(scenes):
 scene = scenes[-1]
 print("\\nSelected:", scene.name)
 viz.point_map(LAT, LON, zoom=7, footprints={scene.name[17:32]: scene.footprint_wkt}, aoi_wkt=AOI)
-"""),
+""").strip()),
     md("""
 ## c. Download the scene
 
@@ -297,6 +347,26 @@ raw[ok] = prob[ok] >= 0.5
 raw[-CROP:, :] = 255  # image edges without the 64 px context
 raw[:, -CROP:] = 255
 """),
+    ]
+    if colab:  # post-processing without the optional mountain-shade mask
+        cells += [
+    md("""
+## f. Post-processing
+
+As in the paper: the area outside the acquisition footprint and the noisy scene edges (1000 m on the
+range sides, 500 m on the azimuth sides) are set to no data (255). Inside the scene, no pixel is masked.
+"""),
+        code("""
+valid = valid_data_mask(img8, profile["transform"], profile["crs"])
+water = apply_masks(raw, valid)
+lat_c = profile["transform"].f + profile["transform"].e * water.shape[0] / 2
+px_km2 = (profile["transform"].a * 111.32 * np.cos(np.radians(lat_c))) * (abs(profile["transform"].e) * 111.32)
+print(f"Water: {(water == 1).sum() * px_km2:,.1f} km2 | not water: {(water == 0).sum() * px_km2:,.1f} km2 | "
+      f"no data: {(water == 255).sum() * px_km2:,.1f} km2")
+"""),
+        ]
+    else:
+        cells += [
     md("""
 ## f. Post-processing
 
@@ -307,7 +377,7 @@ Optional: `APPLY_SHADE_MASK` also removes mountain shadows (SRTM slopes ≥ 20°
 radar shadows look like water. Use it only in mountains: over flat forest SRTM is noisy and the rule
 would hide lakes and channels (the paper cleaned these polygons by hand).
 """),
-    code("""
+        code("""
 APPLY_SHADE_MASK = False  #@param {type:"boolean"}
 valid = valid_data_mask(img8, profile["transform"], profile["crs"])
 shade = shade_mask(raw.shape, profile["transform"], profile["crs"], cache_dir=WORK / "srtm") if APPLY_SHADE_MASK else np.zeros_like(valid)
@@ -317,8 +387,10 @@ px_km2 = (profile["transform"].a * 111.32 * np.cos(np.radians(lat_c))) * (abs(pr
 print(f"Water: {(water == 1).sum() * px_km2:,.1f} km2 | not water: {(water == 0).sum() * px_km2:,.1f} km2 | "
       f"no data: {(water == 255).sum() * px_km2:,.1f} km2 (of which mountain shade: {shade.sum() * px_km2:,.1f} km2)")
 """),
-    md("""
-## g. Results and GeoTIFF export
+        ]
+    cells += [
+    md(f"""
+## {res_letter}. Results and GeoTIFF export
 
 Layers: Esri satellite basemap, Sentinel-1 VV image, water mask (blue). Use the layer control (top right)
 to switch them on and off. The GeoTIFF (Cloud Optimized, EPSG:4326, 10 m) codes 0 = not water,
@@ -332,7 +404,8 @@ fig = viz.figure(img8, water, title=Path(img8_path).name)
 out_tif = write_mask(WORK / (Path(img8_path).name.replace("_VV_VH_8bits.tif", "") + "_water.tif"), water, profile)
 print("GeoTIFF written:", out_tif)
 """),
-]
+    ]
+    return cells
 
 COLAB_END = [
     code("""
@@ -360,7 +433,7 @@ are often missed; flooded vegetation is not mapped as water; strong convective r
 
 def build(colab: bool):
     nb = nbf.v4.new_notebook()
-    nb.cells = [intro(colab)] + (COLAB_SETUP if colab else JUPYTER_SETUP) + COMMON + (COLAB_END if colab else []) + [CITE]
+    nb.cells = [intro(colab)] + (COLAB_SETUP if colab else JUPYTER_SETUP) + common(colab) + (COLAB_END if colab else []) + [CITE]
     # fixed cell ids, so that rebuilding gives identical files (checked in CI)
     nb.cells = [nbf.from_dict({**c, "id": f"cell-{i:02d}"}) for i, c in enumerate(nb.cells)]
     nb.metadata = {

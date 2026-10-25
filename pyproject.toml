@@ -36,7 +36,7 @@ dependencies = [
 # Search and download of Sentinel-1 scenes (ASF catalogue + requester-pays S3 bucket)
 data = ["asf_search>=8.0", "boto3>=1.34"]
 # Maps and figures used by the notebooks
-viz = ["folium>=0.16", "matplotlib>=3.8"]
+viz = ["folium>=0.16", "matplotlib>=3.8", "ipyleaflet>=0.19", "ipywidgets>=8.0"]
 notebook = ["s1water[data,viz]", "jupyterlab>=4.1", "ipykernel>=6.29"]
 dev = ["s1water[data,viz]", "pytest>=8.0", "ruff>=0.5", "nbformat>=5.10"]
 # Note: esa_snappy (SNAP preprocessing) is installed separately, see docs/INSTALL_SNAP.md

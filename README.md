@@ -54,6 +54,8 @@ The workflow, as in the paper:
 ### Google Colab (no installation)
 
 Click the **Open in Colab** badge, choose *Runtime → Change runtime type → T4 GPU*, and run all cells.
+To choose another place, type the coordinates in the form or **click on the map** of step a (the latitude and
+longitude boxes next to the map fill in), then run the following cells.
 
 - **Without an AWS account** the notebook uses a preprocessed scene of Anavilhanas (28 August 2026)
   hosted on Hugging Face, and runs prediction, post-processing and display.
@@ -146,7 +148,7 @@ predictions join without seams. float16 on GPU, like the original mixed-precisio
 **Post-processing (`s1water.postprocess`)**: the area outside the acquisition footprint and the noisy
 scene borders are set to no data (1000 m on the range sides, 500 m on the azimuth sides), as in the
 paper. Inside the scene no pixel is masked: 255 in the output means no data only. Optionally
-(`apply_shade_mask=True`, `--shade-mask`, or `APPLY_SHADE_MASK` in the notebooks) mountain shadows are
+(`apply_shade_mask=True`, `--shade-mask`, or `APPLY_SHADE_MASK` in the JupyterLab notebook) mountain shadows are
 removed with SRTM (slope ≥ 20° on 90 m SRTM, convex hulls). It is off by default because over flat
 forest SRTM is noisy and the rule hides lakes and channels, which the paper removed by hand.
 

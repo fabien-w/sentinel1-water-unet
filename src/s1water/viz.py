@@ -44,6 +44,68 @@ def point_map(lat: float, lon: float, zoom: int = 10, footprints: dict | None = 
     return m
 
 
+class PointPicker:
+    """Interactive map (ipyleaflet) to choose a point by clicking, with Latitude / Longitude boxes.
+
+    A click moves the marker and fills the boxes; typing in the boxes moves the marker. The chosen
+    point is read with ``.lat`` and ``.lon``. In Colab, call
+    ``google.colab.output.enable_custom_widget_manager()`` before displaying ``.widget``.
+    """
+
+    def __init__(self, lat: float, lon: float, zoom: int = 9, half_size: float | None = None):
+        import ipyleaflet as L
+        import ipywidgets as W
+
+        self._half = half_size
+        # Esri imagery as basemap: the default OpenStreetMap tiles are blocked in Colab (HTTP 403)
+        base = L.TileLayer(url=ESRI_IMAGERY, attribution=ESRI_ATTR, name="Satellite (Esri)", base=True)
+        self.map = L.Map(center=(lat, lon), zoom=zoom, basemap=base, scroll_wheel_zoom=True,
+                         layout=W.Layout(height="450px", width="100%"))
+        self.map.add(L.TileLayer(url=ESRI_LABELS, attribution="Esri", name="Place names"))
+        self.marker = L.Marker(location=(lat, lon), draggable=False, title="chosen point")
+        self.map.add(self.marker)
+        self.square = None
+        if half_size:
+            self.square = L.Rectangle(bounds=self._bounds(lat, lon), color="yellow", fill=False, weight=2)
+            self.map.add(self.square)
+        style = {"description_width": "70px"}
+        self.lat_box = W.BoundedFloatText(value=round(lat, 5), min=-90, max=90, step=0.01,
+                                          description="Latitude", style=style, layout=W.Layout(width="200px"))
+        self.lon_box = W.BoundedFloatText(value=round(lon, 5), min=-180, max=180, step=0.01,
+                                          description="Longitude", style=style, layout=W.Layout(width="200px"))
+        help_text = W.HTML("<b>Click on the map</b> to choose the point,<br>or type the coordinates.")
+        self.widget = W.HBox([self.map, W.VBox([help_text, self.lat_box, self.lon_box])])
+        self.map.on_interaction(self._on_map)
+        self.lat_box.observe(self._on_box, names="value")
+        self.lon_box.observe(self._on_box, names="value")
+
+    def _bounds(self, lat, lon):
+        h = self._half
+        return ((lat - h, lon - h), (lat + h, lon + h))
+
+    def _move(self, lat, lon):
+        self.marker.location = (lat, lon)
+        if self.square is not None:
+            self.square.bounds = self._bounds(lat, lon)
+
+    def _on_map(self, **event):
+        if event.get("type") == "click":
+            lat, lon = event["coordinates"]
+            lon = (lon + 180) % 360 - 180  # the map can be panned around the globe
+            self.lat_box.value, self.lon_box.value = round(lat, 5), round(lon, 5)  # fills the boxes
+
+    def _on_box(self, _change):
+        self._move(self.lat_box.value, self.lon_box.value)
+
+    @property
+    def lat(self) -> float:
+        return float(self.lat_box.value)
+
+    @property
+    def lon(self) -> float:
+        return float(self.lon_box.value)
+
+
 def _png_data_url(rgba: np.ndarray) -> str:
     from PIL import Image
 
