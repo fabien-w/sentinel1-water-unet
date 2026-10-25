@@ -62,6 +62,9 @@ Click the **Open in Colab** badge, choose *Runtime → Change runtime type → T
   downloads the scene (~US$0.12 of data transfer, see [Data access and costs](#data-access-and-costs))
   and preprocesses it.
 
+**Choosing another date**: in step b, type `START` and `END` as `YYYY-MM-DD`, or just `YYYY-MM` for a whole
+month. A day that does not exist (e.g. `2026-06-31`) is corrected to the last day of the month.
+
 ### JupyterLab (local computer or cloud machine)
 
 ```bash

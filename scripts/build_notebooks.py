@@ -227,7 +227,11 @@ come from **Sentinel-1C/D** (the model was trained with Sentinel-1A images; the 
     code("""
 START = "2026-08-01"  #@param {type:"string"}
 END = "2026-08-31"  #@param {type:"string"}
+# dates as YYYY-MM-DD (or just YYYY-MM); a day that does not exist, e.g. 2026-06-31, is corrected
 scenes = search_scenes(LON, LAT, START, END)
+if not scenes:
+    raise RuntimeError(f"No Sentinel-1 scene found over ({LAT}, {LON}) between {START} and {END}. "
+                       "Sentinel-1 passes every 6-12 days: try a longer period, e.g. a whole month.")
 for i, s in enumerate(scenes):
     print(i, s.name, s.start, s.orbit_direction, "orbit", s.relative_orbit)
 scene = scenes[-1]

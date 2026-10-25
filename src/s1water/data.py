@@ -51,9 +51,44 @@ def s3_prefix(name: str) -> str:
     return f"GRD/{t.year}/{t.month}/{t.day}/{mode}/{pol}/{name}/"
 
 
+def normalize_date(text: str, end: bool = False) -> str:
+    """Read a date typed by a user and return a valid ISO date (YYYY-MM-DD).
+
+    Accepts "YYYY-MM-DD", "YYYY-M-D" or "YYYY-MM" (first day of the month, or last day
+    when ``end`` is True). A day after the end of the month, e.g. "2026-06-31", is moved
+    to the last day of the month (June and September have 30 days) with a warning.
+    """
+    import calendar
+
+    parts = str(text).strip().split("-")
+    try:
+        year, month = int(parts[0]), int(parts[1])
+        if not 1 <= month <= 12 or len(parts) > 3:
+            raise ValueError
+        last = calendar.monthrange(year, month)[1]
+        day = int(parts[2]) if len(parts) == 3 else (last if end else 1)
+        if day < 1:
+            raise ValueError
+    except (ValueError, IndexError):
+        raise ValueError(f"Date {text!r} not understood: use the format YYYY-MM-DD, e.g. 2026-08-31") from None
+    if day > last:
+        log.warning("%s does not exist (%s has %d days): using %04d-%02d-%02d", text,
+                    calendar.month_name[month], last, year, month, last)
+        day = last
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+
 def search_scenes(lon: float, lat: float, start: str, end: str) -> list[Scene]:
-    """Sentinel-1 IW GRDH dual-pol (VV+VH) scenes intersecting a point, sorted by date."""
+    """Sentinel-1 IW GRDH dual-pol (VV+VH) scenes intersecting a point, sorted by date.
+
+    ``start`` and ``end`` are inclusive dates (see ``normalize_date`` for accepted formats).
+    """
     import asf_search as asf
+
+    start = normalize_date(start)
+    end = normalize_date(end, end=True)
+    if start > end:
+        raise ValueError(f"The start date {start} is after the end date {end}")
 
     results = asf.geo_search(
         platform=[asf.PLATFORM.SENTINEL1],
@@ -61,8 +96,8 @@ def search_scenes(lon: float, lat: float, start: str, end: str) -> list[Scene]:
         beamMode=asf.BEAMMODE.IW,
         polarization=asf.POLARIZATION.VV_VH,
         intersectsWith=f"POINT({lon} {lat})",
-        start=start,
-        end=end,
+        start=f"{start}T00:00:00Z",
+        end=f"{end}T23:59:59Z",  # include the whole last day
     )
     from shapely.geometry import shape
 

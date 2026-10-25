@@ -43,3 +43,31 @@ def test_bucket_prefix():
     # month and day without leading zeros, as in the original R download script
     assert s3_prefix(NAME) == f"GRD/2026/8/28/IW/DV/{NAME}/"
     assert s3_prefix(NAME.replace("20260828T094657", "20260105T094657")).startswith("GRD/2026/1/5/IW/DV/")
+
+
+def test_dates_typed_by_users():
+    import pytest
+
+    from s1water.data import normalize_date
+
+    # June and September have 30 days: the 31st is moved to the 30th instead of failing
+    assert normalize_date("2026-06-31", end=True) == "2026-06-30"
+    assert normalize_date("2026-09-31", end=True) == "2026-09-30"
+    assert normalize_date("2026-02-30", end=True) == "2026-02-28"
+    assert normalize_date("2026-08-31", end=True) == "2026-08-31"
+    # month only: first or last day
+    assert normalize_date("2026-06") == "2026-06-01"
+    assert normalize_date("2026-06", end=True) == "2026-06-30"
+    assert normalize_date(" 2026-6-5 ") == "2026-06-05"
+    for bad in ("2026-13-01", "June 2026", "2026-06-00", ""):
+        with pytest.raises(ValueError, match="YYYY-MM-DD"):
+            normalize_date(bad)
+
+
+def test_start_after_end_is_rejected():
+    import pytest
+
+    from s1water.data import search_scenes
+
+    with pytest.raises(ValueError, match="after the end date"):
+        search_scenes(-60.8, -2.7, "2026-09-01", "2026-06-30")
