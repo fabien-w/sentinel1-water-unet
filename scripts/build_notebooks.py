@@ -82,35 +82,29 @@ A_TEXT_COLAB = """
 ## a. Choose a point
 
 The default point is on the **Anavilhanas archipelago** (Rio Negro, Brazil), a maze of ~400 forested
-islands and channels upstream of Manaus. Two ways to choose another point:
+islands and channels upstream of Manaus. The *Latitude* and *Longitude* boxes next to the map hold the
+point used by all the next steps:
 
-- **Type it**: change `LAT` and `LON` in the form and run the cell again.
-- **Click on the map** (`CLICK_ON_MAP` checked): click anywhere on the map below; the marker moves and the
-  *Latitude* / *Longitude* boxes next to the map fill in. You can also type in these boxes. Then run the
-  next cells (*Runtime → Run after*): they use the point shown in the boxes.
+- **Click on the map**: tick the box, then click a point; each click replaces the coordinates.
+  Untick it to go back to Anavilhanas (clicks are then ignored).
+- **Type the coordinates** in the boxes.
 
-`HALF_SIZE` sets the size of the area processed around the point (0.25° gives a ~55 × 55 km square;
-the whole scene is ~250 × 170 km).
+Then run the next cells (*Runtime → Run after*): "Run all" does not wait for a click. `HALF_SIZE` sets
+the size of the area processed around the point (0.25° gives a ~55 × 55 km square; the whole scene is
+~250 × 170 km).
 """
 A_CODE_COLAB = """
-LAT = -2.70  #@param {type:"number"}
-LON = -60.80  #@param {type:"number"}
 HALF_SIZE = 0.25  #@param {type:"number"}
-CLICK_ON_MAP = True  #@param {type:"boolean"}
 
-if CLICK_ON_MAP:
-    try:
-        from google.colab import output
-        output.enable_custom_widget_manager()  # interactive widgets (ipyleaflet) in Colab
-    except ImportError:
-        pass
-    picker = viz.PointPicker(LAT, LON, zoom=9, half_size=HALF_SIZE)
-    display(picker.widget)
-else:
-    picker = None
-    display(viz.point_map(LAT, LON, zoom=9, aoi_wkt=aoi_wkt(LON, LAT, HALF_SIZE)))
+try:
+    from google.colab import output
+    output.enable_custom_widget_manager()  # interactive widgets (ipyleaflet) in Colab
+except ImportError:
+    pass
+# "Click on the map" is off at start; the boxes show the Anavilhanas point
+picker = viz.PointPicker(config.DEFAULT_LAT, config.DEFAULT_LON, zoom=9, half_size=HALF_SIZE)
+display(picker.widget)
 """
-
 
 COLAB_SETUP = [
     md("""
@@ -269,9 +263,8 @@ By default the most recent scene of the period is selected. Since 2025, the scen
 come from **Sentinel-1C/D** (the model was trained with Sentinel-1A images; the sensors are identical by design).
 """),
     code((("""
-# point chosen on the map (or typed in the boxes next to it); otherwise the LAT / LON of the form
-if picker is not None:
-    LAT, LON = picker.lat, picker.lon
+# the point shown in the Latitude / Longitude boxes of step a
+LAT, LON = picker.lat, picker.lon
 AOI = aoi_wkt(LON, LAT, HALF_SIZE)
 print(f"Point: {LAT:.4f}, {LON:.4f}")
 """ if colab else "") + """

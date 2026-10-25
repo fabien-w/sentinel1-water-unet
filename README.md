@@ -54,8 +54,9 @@ The workflow, as in the paper:
 ### Google Colab (no installation)
 
 Click the **Open in Colab** badge, choose *Runtime → Change runtime type → T4 GPU*, and run all cells.
-To choose another place, type the coordinates in the form or **click on the map** of step a (the latitude and
-longitude boxes next to the map fill in), then run the following cells.
+To choose another place, tick **Click on the map** in step a and click a point (the latitude and longitude
+boxes next to the map fill in; untick it to go back to Anavilhanas), or type the coordinates in the boxes,
+then run the following cells.
 
 - **Without an AWS account** the notebook uses a preprocessed scene of Anavilhanas (28 August 2026)
   hosted on Hugging Face, and runs prediction, post-processing and display.

@@ -45,18 +45,23 @@ def point_map(lat: float, lon: float, zoom: int = 10, footprints: dict | None = 
 
 
 class PointPicker:
-    """Interactive map (ipyleaflet) to choose a point by clicking, with Latitude / Longitude boxes.
+    """Interactive map (ipyleaflet) with a "Click on the map" checkbox and Latitude / Longitude boxes.
 
-    A click moves the marker and fills the boxes; typing in the boxes moves the marker. The chosen
-    point is read with ``.lat`` and ``.lon``. In Colab, call
+    - The checkbox is off at start and the boxes show the default point (``lat``, ``lon``).
+    - Checkbox on: each click on the map replaces the coordinates in the boxes.
+    - Checkbox off again: the boxes go back to the default point and clicks are ignored.
+    Typing in the boxes always moves the marker. The chosen point is read with ``.lat`` and
+    ``.lon`` (the values shown in the boxes). In Colab, call
     ``google.colab.output.enable_custom_widget_manager()`` before displaying ``.widget``.
     """
 
-    def __init__(self, lat: float, lon: float, zoom: int = 9, half_size: float | None = None):
+    def __init__(self, lat: float, lon: float, zoom: int = 9, half_size: float | None = None,
+                 click_enabled: bool = False):
         import ipyleaflet as L
         import ipywidgets as W
 
         self._half = half_size
+        self.default = (round(lat, 5), round(lon, 5))
         # Esri imagery as basemap: the default OpenStreetMap tiles are blocked in Colab (HTTP 403)
         base = L.TileLayer(url=ESRI_IMAGERY, attribution=ESRI_ATTR, name="Satellite (Esri)", base=True)
         self.map = L.Map(center=(lat, lon), zoom=zoom, basemap=base, scroll_wheel_zoom=True,
@@ -73,9 +78,11 @@ class PointPicker:
                                           description="Latitude", style=style, layout=W.Layout(width="200px"))
         self.lon_box = W.BoundedFloatText(value=round(lon, 5), min=-180, max=180, step=0.01,
                                           description="Longitude", style=style, layout=W.Layout(width="200px"))
-        help_text = W.HTML("<b>Click on the map</b> to choose the point,<br>or type the coordinates.")
-        self.widget = W.HBox([self.map, W.VBox([help_text, self.lat_box, self.lon_box])])
+        self.click_toggle = W.Checkbox(value=click_enabled, description="Click on the map", indent=False)
+        help_text = W.HTML("Tick <b>Click on the map</b>, then click a point,<br>or type the coordinates.")
+        self.widget = W.HBox([self.map, W.VBox([self.click_toggle, help_text, self.lat_box, self.lon_box])])
         self.map.on_interaction(self._on_map)
+        self.click_toggle.observe(self._on_toggle, names="value")
         self.lat_box.observe(self._on_box, names="value")
         self.lon_box.observe(self._on_box, names="value")
 
@@ -89,10 +96,14 @@ class PointPicker:
             self.square.bounds = self._bounds(lat, lon)
 
     def _on_map(self, **event):
-        if event.get("type") == "click":
+        if event.get("type") == "click" and self.click_toggle.value:
             lat, lon = event["coordinates"]
             lon = (lon + 180) % 360 - 180  # the map can be panned around the globe
             self.lat_box.value, self.lon_box.value = round(lat, 5), round(lon, 5)  # fills the boxes
+
+    def _on_toggle(self, change):
+        if not change["new"]:  # switched off: back to the default point
+            self.lat_box.value, self.lon_box.value = self.default
 
     def _on_box(self, _change):
         self._move(self.lat_box.value, self.lon_box.value)

@@ -3,7 +3,7 @@ message: "If you use this software or the model weights, please cite the article
 title: "s1water: surface water segmentation from Sentinel-1 SAR with a U-Net"
 type: software
 license: MIT
-version: 1.0.4
+version: 1.0.5
 authors:
   - family-names: Wagner
     given-names: Fabien H.
